@@ -36,3 +36,23 @@ create-bucket:
 		--versioning-configuration Status=Enabled \
 		$(PROFILE_FLAG) >/dev/null )
 	@echo "Bucket $(BUCKET_NAME) is ready and versioning is enabled (if it wasn't already)."
+
+# Prepare backend config for core module
+prepare-backend-core:
+	@if [ ! -f terraform/core/backend.tfvars ]; then \
+		echo "🔧 No backend.tfvars found in terraform/core."; \
+		if [ -f terraform/core/backend.tfvars.example ]; then \
+			cp terraform/core/backend.tfvars.example terraform/core/backend.tfvars; \
+			echo "📄 Created terraform/core/backend.tfvars from backend.tfvars.example."; \
+			echo "✍️  Please review and edit terraform/core/backend.tfvars before proceeding."; \
+		else \
+			echo "❌ backend.tfvars.example not found in terraform/core. Please add one."; \
+			exit 1; \
+		fi \
+	else \
+		echo "✅ terraform/core/backend.tfvars already exists."; \
+	fi
+
+terraform-init-core:
+	@echo "Initializing Terraform backend for core..."
+	@cd terraform/core && terraform init -backend-config=backend.tfvars $(PROFILE_FLAG)
