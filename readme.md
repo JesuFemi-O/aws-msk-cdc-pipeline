@@ -31,3 +31,33 @@ For our setup, Postgres will be the source and S3 will be the sink.
 ![Architecture](./assets/msk-cdc-archi.png)
 
 We will also deploy redpanda console and Confluent schema registry on an EC2 Server. Enjoy!
+
+
+# How to RUn
+
+Before running any make command, export your S3 bucket name as an environment variable:
+
+```bash
+export TF_STATE_BUCKET_NAME=your-unique-terraform-state-bucket
+```
+
+You can optionally set your AWS profile if not using the default one:
+
+```bash
+export PROFILE=my-aws-profile
+```
+
+you shoould start by creating your TF state bucket:
+
+```bash
+export TF_STATE_BUCKET_NAME=terraform-state-msk-cdc
+make create-bucket
+```
+
+
+🚀 Available Commands
+---
+
+
+create-bucket - Creates the S3 bucket (if it doesn’t exist) and enables versioning
+
