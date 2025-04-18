@@ -53,6 +53,25 @@ prepare-backend-core:
 		echo "✅ terraform/core/backend.tfvars already exists."; \
 	fi
 
+prepare-backend-msk-base:
+	@if [ ! -f terraform/msk-base/backend.tfvars ]; then \
+		echo "🔧 No backend.tfvars found in terraform/msk-base."; \
+		if [ -f terraform/msk-base/backend.tfvars.example ]; then \
+			cp terraform/msk-base/backend.tfvars.example terraform/msk-base/backend.tfvars; \
+			echo "📄 Created terraform/msk-base/backend.tfvars from backend.tfvars.example."; \
+			echo "✍️  Please review and edit terraform/msk-base/backend.tfvars before proceeding."; \
+		else \
+			echo "❌ backend.tfvars.example not found in terraform/msk-base. Please add one."; \
+			exit 1; \
+		fi \
+	else \
+		echo "✅ terraform/msk-base/backend.tfvars already exists."; \
+	fi
+
 terraform-init-core:
 	@echo "Initializing Terraform backend for core..."
 	@cd terraform/core && terraform init -backend-config=backend.tfvars $(PROFILE_FLAG)
+
+terraform-init-msk-base:
+	@echo "Initializing Terraform backend for core..."
+	@cd terraform/msk-base && terraform init -backend-config=backend.tfvars $(PROFILE_FLAG)
