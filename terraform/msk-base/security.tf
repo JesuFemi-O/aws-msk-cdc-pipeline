@@ -82,6 +82,16 @@ resource "aws_security_group_rule" "msk_ingress_9092" {
   security_group_id = aws_security_group.msk_security_group.id
 }
 
+# allow ingress on 9098 from ec2
+resource "aws_security_group_rule" "msk_ingress_9098" {
+  type              = "ingress"
+  from_port         = 9098
+  to_port           = 9098
+  protocol          = "tcp"
+  source_security_group_id   = aws_security_group.ec2_security_group.id
+  security_group_id = aws_security_group.msk_security_group.id
+}
+
 
 resource "aws_security_group_rule" "msk_self_ingress" {
   type              = "ingress"
