@@ -26,5 +26,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Ignore pem files
+# Ignore sensitive files
 *.pem
+.env

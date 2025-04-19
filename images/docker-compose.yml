@@ -1,0 +1,73 @@
+services:
+  schema-registry:
+    build:
+      context: ./schema_registry
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  
+  kafka-connect:
+    build:
+      context: ./connect
+      dockerfile: Dockerfile
+    ports:
+      - 8083:8083
+    environment:
+      CONFIG_STORAGE_TOPIC: cdc_connect_configs
+      OFFSET_STORAGE_TOPIC: cdc_connect_offsets
+      STATUS_STORAGE_TOPIC: cdc_connect_status
+      BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_CONFIG_PROVIDERS: secretsmanager
+      CONNECT_CONFIG_PROVIDERS_SECRETSMANAGER_CLASS: io.confluent.csid.config.provider.aws.SecretsManagerConfigProvider
+      CONNECT_CONFIG_PROVIDERS_SECRETSMANAGER_PARAM_AWS_REGION: ${AWS_REGION}
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 3
+      CONNECT_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_CONSUMER_SECURITY_PROTOCOL: SASL_SSL
+      CONNECT_SASL_MECHANISM: AWS_MSK_IAM
+      CONNECT_PRODUCER_SASL_MECHANISM: AWS_MSK_IAM
+      CONNECT_CONSUMER_SASL_MECHANISM: AWS_MSK_IAM
+      CONNECT_SASL_JAAS_CONFIG: software.amazon.msk.auth.iam.IAMLoginModule required;
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: software.amazon.msk.auth.iam.IAMLoginModule required;
+      CONNECT_CONSUMER_SASL_JAAS_CONFIG: software.amazon.msk.auth.iam.IAMLoginModule required;
+      CONNECT_SASL_CLIENT_CALLBACK_HANDLER_CLASS: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+      CONNECT_PRODUCER_SASL_CLIENT_CALLBACK_HANDLER_CLASS: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+      CONNECT_CONSUMER_SASL_CLIENT_CALLBACK_HANDLER_CLASS: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+  
+  console:
+    image: docker.redpanda.com/redpandadata/console:v2.8.5
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ${BROKER_ARRAY}
+          tls:
+            enabled: true
+          sasl:
+            enabled: true
+            mechanism: AWS_MSK_IAM
+          schemaRegistry:
+            enabled: true
+            urls: ["http://schema-registry:8081"]
+        connect:
+          enabled: true
+          clusters:
+            - name: msk-cdc-poc
+              url: http://kafka-connect:8083
+    ports:
+      - "8082:8080"
+    depends_on:
+      - kafka-connect
+      - schema-registry

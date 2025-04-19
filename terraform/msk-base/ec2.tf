@@ -11,7 +11,7 @@ resource "aws_key_pair" "msk_ec2_key" {
 
 resource "local_file" "ec2_pem_key_file" {
     content  = tls_private_key.msk_ec2_rsa_private_key.private_key_pem
-    filename = "${path.module}/msk-cdcc-terraform.pem"
+    filename = "${path.module}/msk-cdc-terraform.pem"
 }
 
 # create ec2 instance, instance profile, and attach profile to ec2
